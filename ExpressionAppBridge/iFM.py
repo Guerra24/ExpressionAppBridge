@@ -11,12 +11,14 @@ start_iFM_Sender is a asyncio coroutine that will send the data at FREQ frequenc
 import asyncio, socket
 from .config_utils import debug_settings
 FREQ = 60
-IFM_ADDR = "127.0.0.1"
-IFM_PORT = 49983
+# IFM_ADDR = "127.0.0.1"
+# IFM_PORT = 49983
 
 class iFM_Data:
-    def __init__(self, tracking_data):
+    def __init__(self, tracking_data, addr, port):
         self.tracking_data = tracking_data
+        self.addr = addr
+        self.port = port
         self.head_enable = True
         self.rightEye_enable = True
         self.leftEye_enable = True
@@ -44,7 +46,7 @@ class iFM_Data:
             payload = str(self)
             if debug_settings['debug_ifm']:
                 print(payload)
-            self.sock.sendto(payload.encode(), (IFM_ADDR, IFM_PORT))
+            self.sock.sendto(payload.encode(), (self.addr, self.port))
 
 class IFM_Sender_Protocol:
     def __init__(self):
@@ -64,7 +66,7 @@ async def start_iFM_Sender(iFM):
     loop = asyncio.get_running_loop()
     transport, protocol = await loop.create_datagram_endpoint(
         lambda: IFM_Sender_Protocol(),
-        remote_addr=(IFM_ADDR, IFM_PORT))
+        remote_addr=(iFM.addr, iFM.port))
     try:
         while True:
             # Send data if tracking_data.confidence is greater than 25

@@ -1,22 +1,28 @@
 {
   "eyes": {
     "left": {
-      "maxRotation": 30,
+      "maxRotation": 22,
       "fullScale": 80
     },
     "right": {
-      "maxRotation": 30,
+      "maxRotation": 22,
       "fullScale": 80
     }
   },
   "blendshapes": {
     "eyeBlink_L": {
-      "type": "outputSnap",
-      "limit": 50
+      "type": "interpolation",
+      "minIn": 50,
+      "maxIn": 60,
+      "minOut": 0,
+      "maxOut": 100
     },
     "eyeBlink_R": {
-      "type": "outputSnap",
-      "limit": 50
+    "type": "interpolation",
+      "minIn": 50,
+      "maxIn": 60,
+      "minOut": 0,
+      "maxOut": 100
     },
     "browDown_L": {
       "type": "simple",

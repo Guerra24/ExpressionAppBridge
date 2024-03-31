@@ -10,12 +10,13 @@ from ExpressionAppBridge.tracking_data import TrackingData
 import time, transforms3d, threading
 
 # Math constants
-ROT_X_FACTOR = 100
+ROT_X_FACTOR = 80
 ROT_Y_FACTOR = -100
-ROT_Z_FACTOR = -100
+ROT_Z_FACTOR = -60
 POS_X_FACTOR = -0.01
 POS_Y_FACTOR = 0.01
 POS_Z_FACTOR = 0.01
+SYNC_EYE_BLINK = True
 
 # Mapping from mediapipe parameters to iFM
 # The mediapipe parameters seem to be mirrored so Left and Right are mapped opposite
@@ -80,9 +81,20 @@ mediapipe_to_ifm = {
 }
 
 def process_BlendShapes_into_TrackingData(Blendshapes, tracking_data):
+
+    eyeBlinkAverage = 0.0
     for C in Blendshapes[0]:
         if C.category_name in mediapipe_to_ifm.keys():
-            tracking_data.blendshapes[mediapipe_to_ifm[C.category_name]] = C.score * 100
+            if SYNC_EYE_BLINK and (C.category_name == 'eyeBlinkLeft' or C.category_name == 'eyeBlinkRight'):
+                eyeBlinkAverage += C.score
+            else:
+                tracking_data.blendshapes[mediapipe_to_ifm[C.category_name]] = C.score * 100
+    if SYNC_EYE_BLINK:
+        eyeBlinkAverage /= 2.0
+        eyeBlinkAverage *= 100
+        # print(eyeBlinkAverage, end='\r')
+        tracking_data.blendshapes[mediapipe_to_ifm['eyeBlinkLeft']] = eyeBlinkAverage
+        tracking_data.blendshapes[mediapipe_to_ifm['eyeBlinkRight']] = eyeBlinkAverage
 
 def mediapipe_start(cal, iFM, camera, camera_cap):
     
@@ -169,7 +181,7 @@ def mediapipe_start(cal, iFM, camera, camera_cap):
                         
                         payload = str(iFM)
                         iFM.udp_send()
-                        print(f"Running... {int(1/(time.time() - start))} FPS", end='\r')
+                        # print(f"Running... {int(1/(time.time() - start))} FPS", end='\r')
                     except IndexError:
                         pass
         except KeyboardInterrupt:

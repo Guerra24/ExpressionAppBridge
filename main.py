@@ -18,7 +18,7 @@ async def rtx_main(args):
     tdata = TrackingData()
     
     # Set up iFM serializer
-    iFM = iFM_Data(tdata)
+    iFM = iFM_Data(tdata, args.ip, args.port)
     
     # Set up calibration
     cal = TrackingInput(tdata, "config/RTX_Blendshapes_cal.json")
@@ -34,7 +34,7 @@ def mediapipe_main(args):
     tdata = TrackingData()
     
     # iFM serializer
-    iFM = iFM_Data(tdata)
+    iFM = iFM_Data(tdata, args.ip, args.port)
     
     # Set up calibration
     cal = TrackingInput(tdata, "config/Mediapipe_Blendshapes_cal.json")
@@ -53,6 +53,8 @@ if __name__ == "__main__":
     parser.add_argument('--debug-expapp', help="Print tracker console output. Only for RTX", action='store_true')
     parser.add_argument('--debug-param', help="Provide a comma separated list of parameters to be printed IE. 'brow,blink'", action='store', metavar='param')
     parser.add_argument('--cal', action='store_true', help="Do a calibration on start. Only for RTX")
+    parser.add_argument('--ip', default="127.0.0.1", help="Target ip", action='store')
+    parser.add_argument('--port', default=49983, type=int, help="Target port", action='store')
     
     # Parse command line args
     args = parser.parse_args()

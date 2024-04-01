@@ -65,7 +65,7 @@ class CameraBackend:
     def img_cb(self, image):
         self.image_grabbed = image
         self.image_done.set()
-    def read(self):
+    def read(self, frame = None):
         self.image_done.clear()
         self.graph.grab_frame()
         ret = self.image_done.wait(1000)

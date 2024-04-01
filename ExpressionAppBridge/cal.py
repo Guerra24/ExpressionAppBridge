@@ -203,9 +203,27 @@ class TrackingInput:
                     continue
     def eyeRotation(self):
         """Calculate rotation values from stored blendshapes. Rotations are in degrees. No Up/Down rotation set."""
-        
+
+        blinkL = self.tracking_data.blendshapes['eyeBlink_L']
+        blinkR = self.tracking_data.blendshapes['eyeBlink_R']
+        minIn = 30
+        maxIn = 50
+        minOut = 1
+        maxOut = 0
+        if blinkL < minIn:
+            blinkL = minIn
+        if blinkL > maxIn:
+            blinkL = maxIn
+        if blinkR < minIn:
+            blinkR = minIn
+        if blinkR > maxIn:
+            blinkR = maxIn
+        blinkLMulti = ((maxOut - minOut)/(maxIn - minIn) * (blinkL - minIn)) + minOut
+        blinkRMulti = ((maxOut - minOut)/(maxIn - minIn) * (blinkR - minIn)) + minOut
+
         # Left Eye parameters
         leftEye = self.tracking_data.blendshapes['eyeLookOut_L'] - self.tracking_data.blendshapes['eyeLookIn_L']
+        leftEyeX = self.tracking_data.blendshapes['eyeLookDown_L'] - self.tracking_data.blendshapes['eyeLookUp_L']
         leftEyeFullScale = self.config['eyes']['left']['fullScale']
         leftEyeMaxRotation = self.config['eyes']['left']['maxRotation']
         
@@ -214,13 +232,19 @@ class TrackingInput:
             leftEye = leftEyeFullScale
         if leftEye < leftEyeFullScale * -1:
             leftEye = leftEyeFullScale * -1
+
+        if leftEyeX > leftEyeFullScale:
+            leftEyeX = leftEyeFullScale
+        if leftEyeX < leftEyeFullScale * -1:
+            leftEyeX = leftEyeFullScale * -1
         
         # Set rotation for left eye
         self.tracking_data.leftEye[1] = (leftEye / leftEyeFullScale) * leftEyeMaxRotation
-        
-        
+        self.tracking_data.leftEye[0] = (leftEyeX / leftEyeFullScale) * leftEyeMaxRotation * blinkLMulti
+
         # Right Eye parameters
         rightEye = self.tracking_data.blendshapes['eyeLookIn_R'] - self.tracking_data.blendshapes['eyeLookOut_R']
+        rightEyeX = self.tracking_data.blendshapes['eyeLookDown_R'] - self.tracking_data.blendshapes['eyeLookUp_R']
         rightEyeFullScale = self.config['eyes']['right']['fullScale']
         rightEyeMaxRotation = self.config['eyes']['right']['maxRotation']
         
@@ -229,9 +253,14 @@ class TrackingInput:
             rightEye = rightEyeFullScale
         if rightEye < rightEyeFullScale * -1:
             rightEye = rightEyeFullScale * -1
+        if rightEyeX > rightEyeFullScale:
+            rightEyeX = rightEyeFullScale
+        if rightEyeX < rightEyeFullScale * -1:
+            rightEyeX = rightEyeFullScale * -1
         
         # Set rotation for right eye
         self.tracking_data.rightEye[1] = (rightEye / rightEyeFullScale) * rightEyeMaxRotation
+        self.tracking_data.rightEye[0] = (rightEyeX / rightEyeFullScale) * rightEyeMaxRotation * blinkRMulti
     def input_tracking(self, tracking_data):
         ''' Accept a tracking data object, apply calibration and save the result to the internal tracking_data '''
         

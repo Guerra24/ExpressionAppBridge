@@ -138,30 +138,28 @@ def mediapipe_start(cal, iFM, camera, camera_cap):
             cap = cv2.VideoCapture(camera)
             width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
             height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-            fps = int(cap.get(cv2.CAP_PROP_FPS))
 
-            print(width, height, fps)
+            print(width, height)
         else:
             cap = create_camera_backend(camera, camera_cap)
         
         start = None
+        _, frame = cap.read()
         try:
             while True:
-                start = time.time()
+                # start = time.time()
                 # Capture frame-by-frame
-                ret, frame = cap.read()
+                ret, newframe = cap.read(frame)
                 if not ret:
                     print("Can't receive frame (stream end?). Exiting ...")
                     break
-                
                 # Convert to mediapipe format
-                mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=frame)
+                mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=newframe)
                 
                 # Send to landmarker, timestamp in ms
-                landmarker.detect_async(mp_image, int(time.time()*1000))
+                landmarker.detect_async(mp_image, int(time.perf_counter() * 1000))
                 
-                if FrameReady.is_set():
-                    FrameReady.clear()
+                if FrameReady.wait():
                     try:
                         affine = transforms3d.affines.decompose(FrameInfo.facial_transformation_matrixes[0])
                         translation = affine[0]
@@ -179,7 +177,7 @@ def mediapipe_start(cal, iFM, camera, camera_cap):
                         
                         cal.input_tracking(temp_td)
                         
-                        payload = str(iFM)
+                        # payload = str(iFM)
                         iFM.udp_send()
                         # print(f"Running... {int(1/(time.time() - start))} FPS", end='\r')
                     except IndexError:

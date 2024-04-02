@@ -160,6 +160,7 @@ def mediapipe_start(cal, iFM, camera, camera_cap):
                 landmarker.detect_async(mp_image, int(time.perf_counter() * 1000))
                 
                 if FrameReady.wait():
+                    FrameReady.clear()
                     try:
                         affine = transforms3d.affines.decompose(FrameInfo.facial_transformation_matrixes[0])
                         translation = affine[0]

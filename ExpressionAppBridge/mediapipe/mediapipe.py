@@ -146,9 +146,9 @@ def mediapipe_start(cal, iFM, camera, camera_cap):
                 mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=frame)
                 
                 # Send to landmarker, timestamp in ms
-                landmarker.detect_async(mp_image, int(time.time()*1000))
+                landmarker.detect_async(mp_image, int(time.perf_counter() * 1000))
                 
-                if FrameReady.is_set():
+                if FrameReady.wait():
                     FrameReady.clear()
                     try:
                         affine = transforms3d.affines.decompose(FrameInfo.facial_transformation_matrixes[0])

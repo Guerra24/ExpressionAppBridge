@@ -112,16 +112,30 @@ def mediapipe_start(cal, iFM, camera, camera_cap):
     # mediapipe does not give us confidence
     temp_td.confidence = 100
     
-    # FaceLandmarker payload
-    FrameInfo = None
-    FrameReady = threading.Event()
-    
     # FaceLandmarker callback function
     def onDetect(DetectionResult, Image, Cnf):
-        nonlocal FrameInfo
-        nonlocal FrameReady
-        FrameInfo = DetectionResult
-        FrameReady.set()
+        try:
+            affine = transforms3d.affines.decompose(DetectionResult.facial_transformation_matrixes[0])
+            translation = affine[0]
+            rotation_euler = transforms3d.euler.mat2euler(affine[1])
+            
+            temp_td.head[0] = rotation_euler[0] * ROT_X_FACTOR
+            temp_td.head[1] = rotation_euler[1] * ROT_Y_FACTOR
+            temp_td.head[2] = rotation_euler[2] * ROT_Z_FACTOR
+            
+            temp_td.head[3] = translation[0] * POS_X_FACTOR
+            temp_td.head[4] = translation[1] * POS_Y_FACTOR
+            temp_td.head[5] = translation[2] * POS_Z_FACTOR
+            
+            process_BlendShapes_into_TrackingData(DetectionResult.face_blendshapes, temp_td)
+            
+            cal.input_tracking(temp_td)
+            
+            # payload = str(iFM)
+            iFM.udp_send()
+            # print(f"Running... {int(1/(time.time() - start))} FPS", end='\r')
+        except IndexError:
+            pass
     
     # Set landmarker options
     options = FaceLandmarkerOptions(
@@ -158,30 +172,5 @@ def mediapipe_start(cal, iFM, camera, camera_cap):
                 
                 # Send to landmarker, timestamp in ms
                 landmarker.detect_async(mp_image, int(time.perf_counter() * 1000))
-                
-                if FrameReady.wait():
-                    FrameReady.clear()
-                    try:
-                        affine = transforms3d.affines.decompose(FrameInfo.facial_transformation_matrixes[0])
-                        translation = affine[0]
-                        rotation_euler = transforms3d.euler.mat2euler(affine[1])
-                        
-                        temp_td.head[0] = rotation_euler[0] * ROT_X_FACTOR
-                        temp_td.head[1] = rotation_euler[1] * ROT_Y_FACTOR
-                        temp_td.head[2] = rotation_euler[2] * ROT_Z_FACTOR
-                        
-                        temp_td.head[3] = translation[0] * POS_X_FACTOR
-                        temp_td.head[4] = translation[1] * POS_Y_FACTOR
-                        temp_td.head[5] = translation[2] * POS_Z_FACTOR
-                        
-                        process_BlendShapes_into_TrackingData(FrameInfo.face_blendshapes, temp_td)
-                        
-                        cal.input_tracking(temp_td)
-                        
-                        # payload = str(iFM)
-                        iFM.udp_send()
-                        # print(f"Running... {int(1/(time.time() - start))} FPS", end='\r')
-                    except IndexError:
-                        pass
         except KeyboardInterrupt:
             print("Closing...")

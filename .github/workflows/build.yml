@@ -1,0 +1,30 @@
+name: Build tracker
+
+on: [push]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        sys:
+         - { os: ubuntu-latest, wget: wget }
+         - { os: windows-latest, wget: 'C:\msys64\usr\bin\wget.exe' }
+    runs-on: ${{ matrix.sys.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Download model
+        run: ${{ matrix.sys.wget }} -O face_landmarker.task https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/latest/face_landmarker.task
+      - name: Build package
+        run: pyinstaller main.py --add-data config:config --add-data face_landmarker.task:. --contents-directory .
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ExpressionAppBridge-${{ matrix.sys.os }}
+          path: dist/main

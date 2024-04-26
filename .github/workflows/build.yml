@@ -7,8 +7,8 @@ jobs:
     strategy:
       matrix:
         sys:
-         - { os: ubuntu-latest, wget: wget }
-         - { os: windows-latest, wget: 'C:\msys64\usr\bin\wget.exe' }
+         - { os: ubuntu-latest, wget: wget, venv: 'source venv/bin/activate' }
+         - { os: windows-latest, wget: 'C:\msys64\usr\bin\wget.exe', venv: 'venv\Scripts\activate.ps1' }
     runs-on: ${{ matrix.sys.os }}
     steps:
       - uses: actions/checkout@v4
@@ -17,12 +17,14 @@ jobs:
         with:
           python-version: '3.10'
           cache: 'pip'
-      - name: Install dependencies
-        run: pip install -r requirements.txt
       - name: Download model
         run: ${{ matrix.sys.wget }} -O face_landmarker.task https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/latest/face_landmarker.task
-      - name: Build package
-        run: pyinstaller main.py --add-data config:config --add-data face_landmarker.task:. --contents-directory .
+      - name: Build
+        run: |
+          python -m venv venv
+          ${{ matrix.sys.venv }}
+          pip install -r requirements.txt
+          pyinstaller main.py --add-data config:config --add-data face_landmarker.task:. --contents-directory .
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
